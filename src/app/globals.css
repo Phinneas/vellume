@@ -1,1 +1,17 @@
 @import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-cream: #F4EBD9;
+    --color-dark: #2C3E50;
+  }
+
+  body {
+    @apply bg-[#F4EBD9] text-[#2C3E50];
+    font-family: "JetBrains Mono", "Courier New", monospace;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+  }
+}

@@ -1,34 +1,179 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vellume - Pixel Art Journaling App
+
+A Next.js 15 web application for journaling entries that converts them into beautiful pixel art.
+
+## Overview
+
+Vellume is a minimal, retro-inspired journaling application with the following features:
+
+- **Authentication**: Email/password login and signup using Better Auth
+- **Journal Writing**: Clean, distraction-free interface for writing entries
+- **Gallery**: View your converted pixel art entries
+- **User Settings**: Manage account information and preferences
+- **Responsive Design**: Mobile-friendly UI with Tailwind CSS
+- **State Management**: Zustand for client-side auth state
+
+## Tech Stack
+
+- **Framework**: Next.js 15 with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **State Management**: Zustand
+- **Authentication**: Better Auth (@better-auth/react)
+- **Icons**: Lucide React
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 20.x or higher
+- npm or yarn
+
+### Installation
+
+1. Clone the repository and navigate to the project:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cd vellume
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables:
+```bash
+cp .env.example .env.local
+```
 
-## Learn More
+Update `.env.local` with your API URL:
+```
+NEXT_PUBLIC_API_URL=http://localhost:3001
+```
 
-To learn more about Next.js, take a look at the following resources:
+4. Run the development server:
+```bash
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project Structure
 
-## Deploy on Vercel
+```
+src/
+├── app/                      # Next.js app router
+│   ├── layout.tsx           # Root layout
+│   ├── page.tsx             # Home/redirect page
+│   ├── globals.css          # Global styles
+│   ├── login/               # Login page
+│   ├── signup/              # Signup page
+│   ├── write/               # Journal writing interface
+│   ├── gallery/             # Entry gallery/pixel art view
+│   └── settings/            # User settings
+├── components/              # React components
+│   ├── auth-layout.tsx      # Layout for authenticated pages
+│   ├── navbar.tsx           # Navigation bar with user menu
+│   └── protected-route.tsx  # Protected route wrapper
+├── lib/
+│   ├── store.ts             # Zustand auth store
+│   └── auth-service.ts      # API service for authentication
+└── public/                  # Static assets
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Pages
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Public Pages
+- `/login` - Login with email and password
+- `/signup` - Create a new account
+
+### Protected Pages (require authentication)
+- `/write` - Write and submit journal entries
+- `/gallery` - View pixel art conversions (currently empty state)
+- `/settings` - View/manage account information and sign out
+
+## Features
+
+### Authentication Flow
+1. User visits `/` → redirects to `/login` if not authenticated
+2. User logs in or signs up via Better Auth
+3. Auth store persists user session in localStorage
+4. Authenticated users can access protected routes
+5. Sign out clears auth state and redirects to login
+
+### Design
+- **Color Scheme**: Cream background (#F4EBD9) with dark text (#2C3E50)
+- **Typography**: Monospace fonts (JetBrains Mono fallback) for retro feel
+- **Responsive**: Mobile-first design with Tailwind CSS breakpoints
+- **Minimal**: Clean, distraction-free interface
+
+## Environment Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `NEXT_PUBLIC_API_URL` | Backend API endpoint | `http://localhost:3001` |
+
+## API Integration
+
+The app expects a backend API at the URL specified in `NEXT_PUBLIC_API_URL` with the following endpoints:
+
+### Authentication Endpoints
+- `POST /auth/login` - Login with email/password
+- `POST /auth/signup` - Create new account
+- `POST /auth/logout` - Logout user
+- `GET /auth/session` - Get current session
+
+## Development Notes
+
+### What's Implemented
+✅ Authentication pages (login/signup)
+✅ Protected routes with auth guards
+✅ Main navigation layout
+✅ Core pages (write, gallery, settings)
+✅ Responsive design
+✅ Client-side state management
+✅ Zustand auth store with persistence
+
+### What's Not Implemented
+❌ Backend API (assumed to exist)
+❌ Database integration
+❌ Pixel art generation
+❌ Image upload
+❌ Payment/subscription
+❌ Real data fetching
+
+These will be implemented when the backend API is ready.
+
+## Running the App
+
+```bash
+# Development
+npm run dev
+
+# Build for production
+npm run build
+
+# Run production build
+npm start
+
+# Linting
+npm run lint
+```
+
+## Browser Support
+
+Works in all modern browsers (Chrome, Firefox, Safari, Edge)
+
+## Future Enhancements
+
+- Pixel art conversion algorithm
+- Image gallery with filters
+- User profile customization
+- Social sharing features
+- Offline mode with sync
+- Dark mode theme option
+- Export entries as images
+
+## License
+
+MIT
