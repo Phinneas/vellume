@@ -447,31 +447,36 @@ async function handleSignup(request: Request, env: Env): Promise<Response> {
     return errorResponse('MISSING_FIELDS', 'Email and password are required', 400);
   }
 
-  // Check if user exists
-  const existing = await env.DB.prepare(
-    'SELECT id FROM user WHERE email = ?'
-  ).bind(email).first();
+  try {
+    // Check if user exists
+    const existing = await env.DB.prepare(
+      'SELECT id FROM user WHERE email = ?'
+    ).bind(email).first();
 
-  if (existing) {
-    return errorResponse('USER_EXISTS', 'User with this email already exists', 409);
+    if (existing) {
+      return errorResponse('USER_EXISTS', 'User with this email already exists', 409);
+    }
+
+    // Create user
+    const userId = generateId();
+    const passwordHash = await hashPassword(password);
+    const timestamp = now();
+
+    await env.DB.prepare(
+      'INSERT INTO user (id, email, name, password_hash, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(userId, email, name || null, passwordHash, timestamp, timestamp).run();
+
+    // Create token
+    const token = await createToken(userId, env);
+
+    return jsonResponse({
+      user: { id: userId, email, name: name || null },
+      token,
+    }, 201);
+  } catch (error) {
+    console.error('Signup error:', error);
+    return errorResponse('SIGNUP_FAILED', `Failed to create account: ${error instanceof Error ? error.message : 'Unknown error'}`, 500);
   }
-
-  // Create user
-  const userId = generateId();
-  const passwordHash = await hashPassword(password);
-  const timestamp = now();
-
-  await env.DB.prepare(
-    'INSERT INTO user (id, email, name, password_hash, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
-  ).bind(userId, email, name || null, passwordHash, timestamp, timestamp).run();
-
-  // Create token
-  const token = await createToken(userId, env);
-
-  return jsonResponse({
-    user: { id: userId, email, name: name || null },
-    token,
-  }, 201);
 }
 
 // Route: POST /api/auth/login
@@ -636,8 +641,9 @@ async function handleCloudGeneration(request: Request, env: Env): Promise<Respon
       );
 
       // Response is a ReadableStream or Uint8Array
-      if (response instanceof ReadableStream) {
-        const reader = response.getReader();
+      const aiResponse = response as unknown;
+      if (aiResponse instanceof ReadableStream) {
+        const reader = aiResponse.getReader();
         const chunks: Uint8Array[] = [];
         while (true) {
           const { done, value } = await reader.read();
@@ -651,11 +657,11 @@ async function handleCloudGeneration(request: Request, env: Env): Promise<Respon
           imageBuffer.set(chunk, offset);
           offset += chunk.length;
         }
-      } else if (response instanceof Uint8Array) {
-        imageBuffer = response;
+      } else if (aiResponse instanceof Uint8Array) {
+        imageBuffer = aiResponse;
       } else {
         // Assume it's an ArrayBuffer or similar
-        imageBuffer = new Uint8Array(response as ArrayBuffer);
+        imageBuffer = new Uint8Array(aiResponse as ArrayBuffer);
       }
 
       break; // Success, exit retry loop
