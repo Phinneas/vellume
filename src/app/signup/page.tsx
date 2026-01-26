@@ -30,7 +30,7 @@ export default function SignupPage() {
 
     try {
       const response = await authService.signup({ name, email, password });
-      login(response.user);
+      login(response.user, response.token);
       router.push("/write");
     } catch (err) {
       setError(

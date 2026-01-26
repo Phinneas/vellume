@@ -11,6 +11,7 @@ interface JournalEntry {
   entry_text: string;
   mood: string;
   created_at: string;
+  image_url?: string;
 }
 
 export default function GalleryPage() {
@@ -68,6 +69,59 @@ export default function GalleryPage() {
       month: "short",
       day: "numeric",
     });
+  };
+
+  const getCardBackground = (journal: JournalEntry) => {
+    if (journal.image_url) {
+      return {
+        backgroundImage: `url(${journal.image_url})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      };
+    }
+    return {
+      backgroundColor: '#F4EBD9',
+    };
+  };
+
+  const getCardContent = (journal: JournalEntry) => {
+    if (journal.image_url) {
+      return (
+        <div className="w-full h-full flex items-end p-4 bg-black bg-opacity-50">
+          <div className="text-white">
+            <div className="text-sm mb-2">
+              {formatDate(journal.created_at)}
+            </div>
+            <div className="text-lg font-bold mb-2">
+              {truncateText(journal.entry_text, 50)}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Fallback for entries without images
+    const firstLetter = journal.entry_text.trim().charAt(0).toUpperCase();
+    return (
+      <div className="w-full h-full flex flex-col justify-between p-4">
+        <div className="flex justify-center items-center h-24">
+          <div className="w-16 h-16 bg-[#2C3E50] text-[#F4EBD9] rounded flex items-center justify-center text-2xl font-bold">
+            {firstLetter}
+          </div>
+        </div>
+        <div>
+          <div className="text-sm text-[#2C3E50]/70 mb-2">
+            {formatDate(journal.created_at)}
+          </div>
+          <div className="text-[#2C3E50] mb-4">
+            {truncateText(journal.entry_text)}
+          </div>
+          <div className="text-xs text-[#2C3E50]/50">
+            Mood: {journal.mood}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   if (loading) {
@@ -139,17 +193,10 @@ export default function GalleryPage() {
             <div
               key={journal.id}
               onClick={() => handleCardClick(journal.id)}
-              className="border-2 border-[#2C3E50] rounded-lg p-6 cursor-pointer hover:shadow-lg transition-shadow"
+              className="border-2 border-[#2C3E50] rounded-lg p-6 cursor-pointer hover:shadow-lg transition-shadow h-64 flex"
+              style={getCardBackground(journal)}
             >
-              <div className="text-sm text-[#2C3E50]/70 mb-2">
-                {formatDate(journal.created_at)}
-              </div>
-              <div className="text-[#2C3E50] mb-4">
-                {truncateText(journal.entry_text)}
-              </div>
-              <div className="text-xs text-[#2C3E50]/50">
-                Mood: {journal.mood}
-              </div>
+              {getCardContent(journal)}
             </div>
           ))}
         </div>

@@ -1,16 +1,36 @@
 "use client";
 
 import { useAuthStore } from "@/lib/store";
+import { authService } from "@/lib/auth-service";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { LogOut, Menu, X, Sparkles, Crown } from "lucide-react";
+import { useState, useEffect } from "react";
 
 export function Navbar() {
-  const { user, logout } = useAuthStore();
+  const { user, token, subscription, setSubscription, setUsage, logout } = useAuthStore();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  const isPremium = subscription?.status === 'active';
+
+  // Fetch subscription status on mount
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!token) return;
+      
+      try {
+        const data = await authService.getUserMe(token);
+        setSubscription(data.subscription);
+        setUsage(data.usage);
+      } catch (error) {
+        console.error('Failed to fetch user data:', error);
+      }
+    };
+
+    fetchUserData();
+  }, [token, setSubscription, setUsage]);
 
   const handleSignOut = async () => {
     logout();
@@ -46,6 +66,22 @@ export function Navbar() {
             >
               Settings
             </Link>
+            
+            {/* Premium/Upgrade Button */}
+            {isPremium ? (
+              <div className="flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-amber-400 to-amber-500 text-[#2C3E50] rounded-full text-sm font-bold">
+                <Crown className="w-4 h-4" />
+                Premium
+              </div>
+            ) : (
+              <Link
+                href="/pricing"
+                className="flex items-center gap-1 px-3 py-1 bg-[#2C3E50] text-[#F4EBD9] rounded-full text-sm font-medium hover:bg-[#1a252f] transition-colors"
+              >
+                <Sparkles className="w-4 h-4" />
+                Upgrade
+              </Link>
+            )}
           </div>
 
           {/* User Menu */}
@@ -55,9 +91,9 @@ export function Navbar() {
               className="flex items-center gap-2 px-4 py-2 rounded border border-[#2C3E50] hover:bg-white transition-colors"
             >
               <div className="w-8 h-8 bg-[#2C3E50] rounded-full flex items-center justify-center text-white text-sm font-bold">
-                {user?.name.charAt(0).toUpperCase()}
+                {user?.name?.charAt(0).toUpperCase() || 'U'}
               </div>
-              <span className="text-[#2C3E50] text-sm">{user?.name}</span>
+              <span className="text-[#2C3E50] text-sm">{user?.name || 'User'}</span>
             </button>
 
             {dropdownOpen && (
@@ -65,6 +101,12 @@ export function Navbar() {
                 <div className="px-4 py-2 border-b border-[#2C3E50] text-sm text-[#2C3E50]">
                   {user?.email}
                 </div>
+                {isPremium && (
+                  <div className="px-4 py-2 border-b border-[#2C3E50] text-xs text-amber-600 flex items-center gap-1">
+                    <Crown className="w-3 h-3" />
+                    Premium Member
+                  </div>
+                )}
                 <button
                   onClick={handleSignOut}
                   className="w-full text-left px-4 py-2 text-[#2C3E50] hover:bg-gray-100 flex items-center gap-2 transition-colors"
@@ -106,6 +148,23 @@ export function Navbar() {
             >
               Settings
             </Link>
+            
+            {/* Mobile Premium/Upgrade */}
+            {isPremium ? (
+              <div className="py-2 px-4 flex items-center gap-1 text-amber-600">
+                <Crown className="w-4 h-4" />
+                <span className="font-bold">Premium Member</span>
+              </div>
+            ) : (
+              <Link
+                href="/pricing"
+                className="block py-2 px-4 text-[#2C3E50] hover:font-bold flex items-center gap-1"
+              >
+                <Sparkles className="w-4 h-4" />
+                Upgrade to Premium
+              </Link>
+            )}
+            
             <button
               onClick={() => {
                 handleSignOut();

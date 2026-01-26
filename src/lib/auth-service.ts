@@ -15,14 +15,41 @@ export interface AuthResponse {
     name: string;
     email: string;
   };
-  session: {
-    token: string;
+  token: string;
+}
+
+export interface Subscription {
+  id: string;
+  user_id: string;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  plan: string;
+  status: string;
+  current_period_end: number | null;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface Usage {
+  images_this_week: number;
+  limit: number;
+}
+
+export interface UserMeResponse {
+  user: {
+    id: string;
+    name: string | null;
+    email: string;
+    created_at: number;
+    updated_at: number;
   };
+  subscription: Subscription | null;
+  usage: Usage;
 }
 
 export const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const response = await fetch(`${API_URL}/auth/login`, {
+    const response = await fetch(`${API_URL}/api/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -31,14 +58,15 @@ export const authService = {
     });
 
     if (!response.ok) {
-      throw new Error("Login failed");
+      const data = await response.json();
+      throw new Error(data.error?.message || "Login failed");
     }
 
     return response.json();
   },
 
   async signup(credentials: SignupCredentials): Promise<AuthResponse> {
-    const response = await fetch(`${API_URL}/auth/signup`, {
+    const response = await fetch(`${API_URL}/api/auth/signup`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -47,29 +75,30 @@ export const authService = {
     });
 
     if (!response.ok) {
-      throw new Error("Signup failed");
+      const data = await response.json();
+      throw new Error(data.error?.message || "Signup failed");
     }
 
     return response.json();
   },
 
   async logout(): Promise<void> {
-    await fetch(`${API_URL}/auth/logout`, {
-      method: "POST",
-    });
+    // Client-side logout - just clear local state
+    // No server endpoint needed for JWT-based auth
   },
 
-  async getSession(): Promise<AuthResponse | null> {
-    try {
-      const response = await fetch(`${API_URL}/auth/session`);
+  async getUserMe(token: string): Promise<UserMeResponse> {
+    const response = await fetch(`${API_URL}/api/user/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-      if (!response.ok) {
-        return null;
-      }
-
-      return response.json();
-    } catch {
-      return null;
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error?.message || "Failed to get user info");
     }
+
+    return response.json();
   },
 };

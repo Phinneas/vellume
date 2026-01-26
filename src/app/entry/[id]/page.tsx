@@ -11,6 +11,7 @@ interface JournalEntry {
   entry_text: string;
   mood: string;
   created_at: string;
+  image_url?: string;
 }
 
 export default function EntryPage({ params }: { params: { id: string } }) {
@@ -37,6 +38,10 @@ export default function EntryPage({ params }: { params: { id: string } }) {
         });
 
         if (!response.ok) {
+          if (response.status === 401) {
+            router.push("/login");
+            return;
+          }
           throw new Error("Failed to fetch journal");
         }
 
@@ -57,7 +62,7 @@ export default function EntryPage({ params }: { params: { id: string } }) {
     };
 
     fetchJournal();
-  }, [params.id]);
+  }, [params.id, router]);
 
   const handleDelete = async () => {
     try {
@@ -82,6 +87,34 @@ export default function EntryPage({ params }: { params: { id: string } }) {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete journal");
       console.error("Delete error:", err);
+    }
+  };
+
+  const handleDownloadImage = () => {
+    if (!journal?.image_url) return;
+
+    const link = document.createElement('a');
+    link.href = journal.image_url;
+    link.download = `journal-${params.id}.png`;
+    link.click();
+  };
+
+  const handleShare = async () => {
+    try {
+      if (!journal) return;
+
+      if (!navigator.share) {
+        throw new Error("Web Share API not supported in your browser");
+      }
+
+      await navigator.share({
+        title: 'My Journal Entry',
+        text: journal.entry_text.substring(0, 100),
+        url: window.location.href,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to share journal");
+      console.error("Share error:", err);
     }
   };
 
@@ -169,6 +202,16 @@ export default function EntryPage({ params }: { params: { id: string } }) {
           </button>
         </div>
 
+        {journal.image_url && (
+          <div className="mb-6 flex justify-center">
+            <img
+              src={journal.image_url}
+              alt="Journal pixel art"
+              className="max-w-[512px] w-full border-2 border-[#2C3E50]"
+            />
+          </div>
+        )}
+
         <div className="bg-white border-2 border-[#2C3E50] rounded-lg p-6 mb-6">
           <div className="text-sm text-[#2C3E50]/70 mb-4">
             Created: {formatDate(journal.created_at)}
@@ -181,7 +224,21 @@ export default function EntryPage({ params }: { params: { id: string } }) {
           </div>
         </div>
 
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-4 mb-6">
+          {journal.image_url && (
+            <button
+              onClick={handleDownloadImage}
+              className="px-6 py-2 bg-[#3498db] text-white font-bold hover:bg-[#2980b9] transition-colors"
+            >
+              Download Image
+            </button>
+          )}
+          <button
+            onClick={handleShare}
+            className="px-6 py-2 bg-[#9b59b6] text-white font-bold hover:bg-[#8e44ad] transition-colors"
+          >
+            Share
+          </button>
           <a
             href="/gallery"
             className="inline-block px-6 py-3 bg-[#2C3E50] text-white font-bold hover:bg-[#1a252f] transition-colors"

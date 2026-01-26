@@ -1,0 +1,29 @@
+name = "vellume-api"
+main = "src/index.ts"
+compatibility_date = "2024-01-17"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "vellume-db"
+database_id = "YOUR_DATABASE_ID_HERE"  # Replace after running: wrangler d1 create vellume-db
+
+# R2 Storage binding (for images)
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "vellume-images"
+
+# AI binding for Cloudflare Workers AI
+[ai]
+binding = "AI"
+
+# Environment variables (non-secret)
+[vars]
+ENVIRONMENT = "production"
+
+# Secrets - Set these with: wrangler secret put SECRET_NAME
+# STRIPE_SECRET_KEY - Your Stripe secret key (sk_live_xxx or sk_test_xxx)
+# STRIPE_WEBHOOK_SECRET - Webhook signing secret (whsec_xxx)
+# STRIPE_PRICE_ID_MONTHLY - Price ID for monthly plan (price_xxx)
+# STRIPE_PRICE_ID_YEARLY - Price ID for yearly plan (price_xxx)
+# JWT_SECRET - Secret for signing JWT tokens

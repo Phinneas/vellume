@@ -22,7 +22,7 @@ export default function LoginPage() {
 
     try {
       const response = await authService.login({ email, password });
-      login(response.user);
+      login(response.user, response.token);
       router.push("/write");
     } catch (err) {
       setError(
