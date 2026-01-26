@@ -1,6 +1,6 @@
 import {createMMKV, type MMKV} from 'react-native-mmkv';
 
-export const API_URL = 'https://your-worker.workers.dev';
+export const API_URL = 'https://vellume-api.buzzuw2.workers.dev';
 
 // Initialize MMKV storage
 let storage: MMKV | null = null;

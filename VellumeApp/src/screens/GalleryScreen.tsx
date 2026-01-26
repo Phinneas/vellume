@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useState, useCallback} from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   FlatList,
   Image,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import type {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
@@ -38,11 +39,18 @@ export default function GalleryScreen() {
   const fetchJournalsFromAPI = useJournalStore(
     state => state.fetchJournalsFromAPI,
   );
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadJournals();
     fetchJournalsFromAPI();
   }, [loadJournals, fetchJournalsFromAPI]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchJournalsFromAPI();
+    setRefreshing(false);
+  }, [fetchJournalsFromAPI]);
 
   const truncateText = (text: string, maxLength: number = 100): string => {
     if (text.length <= maxLength) {
@@ -51,8 +59,8 @@ export default function GalleryScreen() {
     return text.substring(0, maxLength) + '...';
   };
 
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
+  const formatDate = (timestamp: number): string => {
+    const date = new Date(timestamp);
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -80,7 +88,15 @@ export default function GalleryScreen() {
           </View>
         )}
         <View style={styles.cardContent}>
-          <Text style={styles.cardDate}>{formatDate(item.created_at)}</Text>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardDate}>{formatDate(item.created_at)}</Text>
+            <View
+              style={[
+                styles.syncIndicator,
+                {backgroundColor: item.synced ? '#27AE60' : '#F1C40F'},
+              ]}
+            />
+          </View>
           <Text style={styles.cardText}>{truncateText(item.entry_text)}</Text>
         </View>
       </TouchableOpacity>
@@ -119,15 +135,20 @@ export default function GalleryScreen() {
   return (
     <View style={styles.container}>
       <FlatList
-        data={journals.sort(
-          (a, b) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-        )}
+        data={journals.sort((a, b) => b.created_at - a.created_at)}
         renderItem={renderJournalItem}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
         numColumns={2}
         columnWrapperStyle={styles.row}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#2C3E50"
+            colors={['#2C3E50']}
+          />
+        }
       />
     </View>
   );
@@ -221,12 +242,22 @@ const styles = StyleSheet.create({
   cardContent: {
     padding: 12,
   },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
   cardDate: {
     fontSize: 12,
     color: '#2C3E50',
     opacity: 0.7,
-    marginBottom: 4,
     fontFamily: 'monospace',
+  },
+  syncIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   cardText: {
     fontSize: 14,

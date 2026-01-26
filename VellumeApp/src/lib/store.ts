@@ -81,9 +81,10 @@ export interface Journal {
   id: string;
   entry_text: string;
   mood: string;
-  created_at: string;
-  synced: boolean;
   image_url?: string;
+  created_at: number;
+  updated_at: number;
+  synced: boolean;
 }
 
 // Store state type
@@ -99,6 +100,7 @@ interface JournalStore {
   ) => Promise<Journal>;
   updateJournal: (id: string, updates: Partial<Journal>) => void;
   deleteJournal: (id: string) => Promise<void>;
+  setJournals: (journals: Journal[]) => void;
   syncJournals: () => Promise<void>;
   fetchJournalsFromAPI: () => Promise<void>;
 }
@@ -131,13 +133,15 @@ export const useJournalStore = create<JournalStore>((set, get) => ({
     mood: string,
     imageUrl?: string,
   ): Promise<Journal> => {
+    const now = Date.now();
     const newJournal: Journal = {
       id: generateId(),
       entry_text: entryText,
       mood,
-      created_at: new Date().toISOString(),
-      synced: false,
       image_url: imageUrl,
+      created_at: now,
+      updated_at: now,
+      synced: false,
     };
 
     // Add to local store
@@ -187,8 +191,13 @@ export const useJournalStore = create<JournalStore>((set, get) => ({
 
   updateJournal: (id: string, updates: Partial<Journal>) => {
     const journals = get().journals.map(j =>
-      j.id === id ? {...j, ...updates} : j,
+      j.id === id ? {...j, ...updates, updated_at: Date.now()} : j,
     );
+    set({journals});
+    getJournalStorage().set('journals', JSON.stringify(journals));
+  },
+
+  setJournals: (journals: Journal[]) => {
     set({journals});
     getJournalStorage().set('journals', JSON.stringify(journals));
   },
@@ -262,25 +271,37 @@ export const useJournalStore = create<JournalStore>((set, get) => ({
 
       if (response.ok) {
         const apiJournals = await response.json();
-        const journals: Journal[] = apiJournals.map(
+        const localJournals = get().journals;
+        const unsyncedLocal = localJournals.filter(j => !j.synced);
+        
+        const remoteJournals: Journal[] = apiJournals.map(
           (j: {
             id: string;
             entry_text: string;
             mood: string;
             created_at: string;
+            updated_at?: string;
             image_url?: string;
           }) => ({
             id: j.id,
             entry_text: j.entry_text,
             mood: j.mood,
-            created_at: j.created_at,
-            synced: true,
             image_url: j.image_url,
+            created_at: new Date(j.created_at).getTime(),
+            updated_at: j.updated_at ? new Date(j.updated_at).getTime() : new Date(j.created_at).getTime(),
+            synced: true,
           }),
         );
 
-        set({journals, isLoading: false});
-        getJournalStorage().set('journals', JSON.stringify(journals));
+        // Merge: keep unsynced local, add new remote
+        const remoteIds = new Set(remoteJournals.map(j => j.id));
+        const mergedJournals = [
+          ...unsyncedLocal,
+          ...remoteJournals.filter(j => !unsyncedLocal.some(local => local.id === j.id)),
+        ];
+
+        set({journals: mergedJournals, isLoading: false});
+        getJournalStorage().set('journals', JSON.stringify(mergedJournals));
       } else {
         throw new Error('Failed to fetch journals');
       }

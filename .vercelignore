@@ -1,0 +1,9 @@
+# Ignore React Native app
+VellumeApp/
+
+# Ignore Cloudflare Workers API
+api/
+
+# Ignore other non-web files
+*.md
+!README.md

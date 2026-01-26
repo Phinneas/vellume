@@ -3,6 +3,7 @@ import {NavigationContainer, NavigationContainerRef} from '@react-navigation/nat
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {Text, StyleSheet, Alert, Linking} from 'react-native';
+import Toast from 'react-native-toast-message';
 
 import LoginScreen from './src/screens/LoginScreen';
 import SignupScreen from './src/screens/SignupScreen';
@@ -227,13 +228,16 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer ref={navigationRef} linking={linking}>
-      {isLoggedIn ? (
-        <MainNavigator onSignOut={handleSignOut} />
-      ) : (
-        <AuthNavigator onAuthSuccess={handleAuthSuccess} />
-      )}
-    </NavigationContainer>
+    <>
+      <NavigationContainer ref={navigationRef} linking={linking}>
+        {isLoggedIn ? (
+          <MainNavigator onSignOut={handleSignOut} />
+        ) : (
+          <AuthNavigator onAuthSuccess={handleAuthSuccess} />
+        )}
+      </NavigationContainer>
+      <Toast />
+    </>
   );
 }
 

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Check, Sparkles, Zap } from 'lucide-react';
 import { useAuthStore } from '@/lib/store';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://vellume-api.buzzuw2.workers.dev';
 
 interface PlanFeature {
   text: string;

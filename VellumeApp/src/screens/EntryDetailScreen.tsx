@@ -34,8 +34,8 @@ export default function EntryDetailScreen() {
 
   const journal = journals.find(j => j.id === journalId);
 
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
+  const formatDate = (timestamp: number): string => {
+    const date = new Date(timestamp);
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
