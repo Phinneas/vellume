@@ -139,7 +139,8 @@ export default function WritePage() {
       return;
     }
 
-    if (!isPremium) {
+    // Check usage limit for free users (allow them to try, but show paywall if at limit)
+    if (!isPremium && isAtLimit) {
       setShowPaywall(true);
       return;
     }
@@ -330,8 +331,9 @@ export default function WritePage() {
               onClick={handleGeneratePixelArt}
               disabled={!entry.trim() || isGenerating || isCloudGenerating}
               className="px-6 py-2 bg-[#3498db] text-white font-bold font-mono hover:bg-[#2980b9] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Creates abstract pixel pattern (decorative only)"
             >
-              {isGenerating ? "Generating..." : "Generate (Instant)"}
+              {isGenerating ? "Generating..." : "Pattern Art"}
             </button>
             
             {/* Cloud AI Generation Button */}
@@ -352,10 +354,10 @@ export default function WritePage() {
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4" />
-                    Cloud AI
-                    {!isPremium && (
+                    AI Image
+                    {!isPremium && usage && (
                       <span className="bg-amber-400 text-[#2C3E50] text-xs px-2 py-0.5 rounded-full font-bold">
-                        PRO
+                        {usage.limit - usage.images_this_week} left
                       </span>
                     )}
                   </>

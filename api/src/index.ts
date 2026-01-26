@@ -596,17 +596,29 @@ async function handleCloudGeneration(request: Request, env: Env): Promise<Respon
     return errorResponse('UNAUTHORIZED', 'Invalid or missing authentication token', 401);
   }
 
-  // Check subscription status - must be premium
+  // Check subscription status
   const subscription = await env.DB.prepare(
     'SELECT status FROM subscriptions WHERE user_id = ?'
   ).bind(userId).first<{ status: string }>();
 
-  if (subscription?.status !== 'active') {
-    return errorResponse(
-      'PREMIUM_REQUIRED',
-      'Cloud AI generation requires a Premium subscription',
-      403
-    );
+  const isPremium = subscription?.status === 'active';
+
+  // Check usage limit for free users (3 images per week)
+  if (!isPremium) {
+    const weekAgo = now() - 604800000;
+    const usageResult = await env.DB.prepare(
+      `SELECT COUNT(*) as count FROM usage_tracking
+       WHERE user_id = ? AND (action = 'image_generated' OR action = 'cloud_image_generated') AND created_at > ?`
+    ).bind(userId, weekAgo).first<UsageCount>();
+
+    const imagesThisWeek = usageResult?.count || 0;
+    if (imagesThisWeek >= 3) {
+      return errorResponse(
+        'LIMIT_REACHED',
+        'You have reached your weekly limit of 3 AI images. Upgrade to Premium for unlimited generations.',
+        403
+      );
+    }
   }
 
   // Parse body
