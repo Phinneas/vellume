@@ -52,6 +52,7 @@ export interface UserMeResponse {
 export const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
+      console.log("[Auth] Attempting login to:", `${API_URL}/api/auth/login`);
       const response = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
         headers: {
@@ -60,6 +61,8 @@ export const authService = {
         body: JSON.stringify(credentials),
       });
 
+      console.log("[Auth] Login response status:", response.status);
+      
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error?.message || "Login failed");
@@ -67,8 +70,10 @@ export const authService = {
 
       return response.json();
     } catch (error) {
-      if (error instanceof TypeError && error.message.includes("fetch")) {
-        throw new Error("Unable to connect to server. Please check your internet connection.");
+      console.error("[Auth] Login error:", error);
+      if (error instanceof TypeError) {
+        console.error("[Auth] TypeError details:", error.message);
+        throw new Error(`Unable to connect to server. Please check your internet connection. (${error.message})`);
       }
       throw error;
     }
@@ -76,6 +81,7 @@ export const authService = {
 
   async signup(credentials: SignupCredentials): Promise<AuthResponse> {
     try {
+      console.log("[Auth] Attempting signup to:", `${API_URL}/api/auth/signup`);
       const response = await fetch(`${API_URL}/api/auth/signup`, {
         method: "POST",
         headers: {
@@ -84,6 +90,8 @@ export const authService = {
         body: JSON.stringify(credentials),
       });
 
+      console.log("[Auth] Signup response status:", response.status);
+      
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error?.message || "Signup failed");
@@ -91,8 +99,10 @@ export const authService = {
 
       return response.json();
     } catch (error) {
-      if (error instanceof TypeError && error.message.includes("fetch")) {
-        throw new Error("Unable to connect to server. Please check your internet connection.");
+      console.error("[Auth] Signup error:", error);
+      if (error instanceof TypeError) {
+        console.error("[Auth] TypeError details:", error.message);
+        throw new Error(`Unable to connect to server. Please check your internet connection. (${error.message})`);
       }
       throw error;
     }
