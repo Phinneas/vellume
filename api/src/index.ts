@@ -716,58 +716,66 @@ export default {
       return new Response(null, { status: 204, headers: corsHeaders() });
     }
 
+    // Wrap all responses to ensure CORS headers are always present
+    let response: Response;
+    
     // Route matching
     try {
       // Auth routes
       if (path === '/api/auth/signup' && method === 'POST') {
-        return handleSignup(request, env);
+        response = await handleSignup(request, env);
+      } else if (path === '/api/auth/login' && method === 'POST') {
+        response = await handleLogin(request, env);
       }
-      if (path === '/api/auth/login' && method === 'POST') {
-        return handleLogin(request, env);
-      }
-
       // User routes
-      if (path === '/api/user/me' && method === 'GET') {
-        return handleGetUserMe(request, env);
+      else if (path === '/api/user/me' && method === 'GET') {
+        response = await handleGetUserMe(request, env);
       }
-
       // Subscription routes
-      if (path === '/api/subscription/checkout' && method === 'POST') {
-        return handleCheckout(request, env);
+      else if (path === '/api/subscription/checkout' && method === 'POST') {
+        response = await handleCheckout(request, env);
       }
-
       // Webhook routes (no auth required)
-      if (path === '/api/webhooks/stripe' && method === 'POST') {
-        return handleStripeWebhook(request, env);
+      else if (path === '/api/webhooks/stripe' && method === 'POST') {
+        response = await handleStripeWebhook(request, env);
       }
-
       // Image routes
-      if (path === '/api/images/upload' && method === 'POST') {
-        return handleImageUpload(request, env);
+      else if (path === '/api/images/upload' && method === 'POST') {
+        response = await handleImageUpload(request, env);
+      } else if (path === '/api/images/generate-cloud' && method === 'POST') {
+        response = await handleCloudGeneration(request, env);
       }
-      if (path === '/api/images/generate-cloud' && method === 'POST') {
-        return handleCloudGeneration(request, env);
-      }
-
       // Entry routes
-      if (path === '/api/entries' && method === 'GET') {
-        return handleGetEntries(request, env);
+      else if (path === '/api/entries' && method === 'GET') {
+        response = await handleGetEntries(request, env);
+      } else if (path === '/api/entries' && method === 'POST') {
+        response = await handleCreateEntry(request, env);
       }
-      if (path === '/api/entries' && method === 'POST') {
-        return handleCreateEntry(request, env);
-      }
-
       // Entry by ID
-      const entryMatch = path.match(/^\/api\/entries\/([^/]+)$/);
-      if (entryMatch && method === 'GET') {
-        return handleGetEntry(request, env, entryMatch[1]);
+      else {
+        const entryMatch = path.match(/^\/api\/entries\/([^/]+)$/);
+        if (entryMatch && method === 'GET') {
+          response = await handleGetEntry(request, env, entryMatch[1]);
+        } else {
+          // 404 for unknown routes
+          response = errorResponse('NOT_FOUND', 'Route not found', 404);
+        }
       }
-
-      // 404 for unknown routes
-      return errorResponse('NOT_FOUND', 'Route not found', 404);
     } catch (error) {
       console.error('Request error:', error);
-      return errorResponse('INTERNAL_ERROR', 'Internal server error', 500);
+      response = errorResponse('INTERNAL_ERROR', 'Internal server error', 500);
     }
+
+    // Ensure CORS headers are always present on the response
+    const newHeaders = new Headers(response.headers);
+    newHeaders.set('Access-Control-Allow-Origin', '*');
+    newHeaders.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    newHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: newHeaders,
+    });
   },
 };
