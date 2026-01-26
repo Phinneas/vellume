@@ -532,21 +532,22 @@ async function handleGetEntries(request: Request, env: Env): Promise<Response> {
   return jsonResponse({ entries: entries.results });
 }
 
-// Route: POST /api/entries
+// Route: POST /api/entries (also /api/journals)
 async function handleCreateEntry(request: Request, env: Env): Promise<Response> {
   const userId = await verifyAuth(request, env);
   if (!userId) {
     return errorResponse('UNAUTHORIZED', 'Invalid or missing authentication token', 401);
   }
 
-  let body: { content?: string };
+  let body: { content?: string; entry_text?: string; mood?: string };
   try {
     body = await request.json();
   } catch {
     return errorResponse('INVALID_BODY', 'Invalid JSON body', 400);
   }
 
-  const { content } = body;
+  // Support both 'content' and 'entry_text' field names
+  const content = body.content || body.entry_text;
   if (!content) {
     return errorResponse('MISSING_CONTENT', 'Content is required', 400);
   }
@@ -554,13 +555,20 @@ async function handleCreateEntry(request: Request, env: Env): Promise<Response> 
   const entryId = generateId();
   const timestamp = now();
 
-  await env.DB.prepare(
-    'INSERT INTO entry (id, user_id, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?)'
-  ).bind(entryId, userId, content, timestamp, timestamp).run();
+  try {
+    await env.DB.prepare(
+      'INSERT INTO entry (id, user_id, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?)'
+    ).bind(entryId, userId, content, timestamp, timestamp).run();
 
-  return jsonResponse({
-    entry: { id: entryId, user_id: userId, content, created_at: timestamp, updated_at: timestamp },
-  }, 201);
+    // Return response with 'id' at top level for compatibility with frontend
+    return jsonResponse({
+      id: entryId,
+      entry: { id: entryId, user_id: userId, content, created_at: timestamp, updated_at: timestamp },
+    }, 201);
+  } catch (error) {
+    console.error('Create entry error:', error);
+    return errorResponse('CREATE_FAILED', `Failed to create entry: ${error instanceof Error ? error.message : 'Unknown error'}`, 500);
+  }
 }
 
 // Route: GET /api/entries/:id
@@ -751,17 +759,17 @@ export default {
       } else if (path === '/api/images/generate-cloud' && method === 'POST') {
         response = await handleCloudGeneration(request, env);
       }
-      // Entry routes
-      else if (path === '/api/entries' && method === 'GET') {
+      // Entry routes (support both /api/entries and /api/journals)
+      else if ((path === '/api/entries' || path === '/api/journals') && method === 'GET') {
         response = await handleGetEntries(request, env);
-      } else if (path === '/api/entries' && method === 'POST') {
+      } else if ((path === '/api/entries' || path === '/api/journals') && method === 'POST') {
         response = await handleCreateEntry(request, env);
       }
-      // Entry by ID
+      // Entry by ID (support both /api/entries/:id and /api/journals/:id)
       else {
-        const entryMatch = path.match(/^\/api\/entries\/([^/]+)$/);
+        const entryMatch = path.match(/^\/api\/(entries|journals)\/([^/]+)$/);
         if (entryMatch && method === 'GET') {
-          response = await handleGetEntry(request, env, entryMatch[1]);
+          response = await handleGetEntry(request, env, entryMatch[2]);
         } else {
           // 404 for unknown routes
           response = errorResponse('NOT_FOUND', 'Route not found', 404);
