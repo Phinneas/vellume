@@ -1,4 +1,6 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://vellume-api.buzzuw2.workers.dev";
+// Hardcode the API URL to ensure it works in production
+// The environment variable is optional for local development
+const API_URL = "https://vellume-api.buzzuw2.workers.dev";
 
 export interface LoginCredentials {
   email: string;
@@ -49,37 +51,51 @@ export interface UserMeResponse {
 
 export const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const response = await fetch(`${API_URL}/api/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(credentials),
-    });
+    try {
+      const response = await fetch(`${API_URL}/api/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(credentials),
+      });
 
-    if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.error?.message || "Login failed");
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error?.message || "Login failed");
+      }
+
+      return response.json();
+    } catch (error) {
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        throw new Error("Unable to connect to server. Please check your internet connection.");
+      }
+      throw error;
     }
-
-    return response.json();
   },
 
   async signup(credentials: SignupCredentials): Promise<AuthResponse> {
-    const response = await fetch(`${API_URL}/api/auth/signup`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(credentials),
-    });
+    try {
+      const response = await fetch(`${API_URL}/api/auth/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(credentials),
+      });
 
-    if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.error?.message || "Signup failed");
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error?.message || "Signup failed");
+      }
+
+      return response.json();
+    } catch (error) {
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        throw new Error("Unable to connect to server. Please check your internet connection.");
+      }
+      throw error;
     }
-
-    return response.json();
   },
 
   async logout(): Promise<void> {
