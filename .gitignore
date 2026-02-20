@@ -44,3 +44,6 @@ next-env.d.ts
 api/wrangler.toml
 api/node_modules/
 api/.wrangler/
+
+# OpenNext
+.open-next
