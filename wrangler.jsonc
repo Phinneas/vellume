@@ -31,5 +31,17 @@
 		// Enable image optimization
 		// see https://opennext.js.org/cloudflare/howtos/image
 		"binding": "IMAGES"
-	}
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "vellume-db"
+		}
+	],
+	"kv_namespaces": [
+		{
+			"binding": "KV",
+			"id": "vellume-kv"
+		}
+	]
 }
